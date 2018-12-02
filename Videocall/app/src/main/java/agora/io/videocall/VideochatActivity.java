@@ -23,8 +23,8 @@ public class VideochatActivity extends AppCompatActivity{
     //The WRITE_EXTERNAL_STORAGE permission isn't mandatory for Agora RTC SDK, just incase if you wanna save logs to external sdcard
     private static final String[] REQUESTED_PERMISSIONS = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
-    private RtcEngine mRtcEngine;
-    private final IRtcEngineEventHandler mRtcEventHandler = new IRtcEngineEventHandler(){
+    private RtcEngine rtcEngine;
+    private final IRtcEngineEventHandler rtcEventHandler = new IRtcEngineEventHandler(){
         @Override
         public void onFirstRemoteVideoDecoded(final int uid, int width, int height, int elapsed){
             runOnUiThread(new Runnable(){
@@ -114,40 +114,40 @@ public class VideochatActivity extends AppCompatActivity{
         super.onDestroy();
         leaveChannel();
         RtcEngine.destroy();
-        mRtcEngine = null;
+        rtcEngine = null;
     }
 
     public void onLocalVideoMuteClicked(View view){
-        ImageView iv = (ImageView) view;
-        if(iv.isSelected()){
-            iv.setSelected(false);
-            iv.clearColorFilter();
+        ImageView imageView = (ImageView) view;
+        if(imageView.isSelected()){
+            imageView.setSelected(false);
+            imageView.clearColorFilter();
         }else{
-            iv.setSelected(true);
-            iv.setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
+            imageView.setSelected(true);
+            imageView.setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
         }
 
-        mRtcEngine.muteLocalVideoStream(iv.isSelected());
+        rtcEngine.muteLocalVideoStream(imageView.isSelected());
         FrameLayout container = (FrameLayout) findViewById(R.id.local_video_view_container);
         SurfaceView surfaceView = (SurfaceView) container.getChildAt(0);
-        surfaceView.setZOrderMediaOverlay(!iv.isSelected());
-        surfaceView.setVisibility(iv.isSelected() ? View.GONE : View.VISIBLE);
+        surfaceView.setZOrderMediaOverlay(!imageView.isSelected());
+        surfaceView.setVisibility(imageView.isSelected() ? View.GONE : View.VISIBLE);
     }
 
     public void onLocalAudioMuteClicked(View view){
-        ImageView iv = (ImageView) view;
-        if(iv.isSelected()){
-            iv.setSelected(false);
-            iv.clearColorFilter();
+        ImageView imageView = (ImageView) view;
+        if(imageView.isSelected()){
+            imageView.setSelected(false);
+            imageView.clearColorFilter();
         }else{
-            iv.setSelected(true);
-            iv.setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
+            imageView.setSelected(true);
+            imageView.setColorFilter(getResources().getColor(R.color.colorPrimary), PorterDuff.Mode.MULTIPLY);
         }
-        mRtcEngine.muteLocalAudioStream(iv.isSelected());
+        rtcEngine.muteLocalAudioStream(imageView.isSelected());
     }
 
     public void onSwitchCameraClicked(View view){
-        mRtcEngine.switchCamera();
+        rtcEngine.switchCamera();
     }
 
     public void onEncCallClicked(View view){
@@ -156,7 +156,7 @@ public class VideochatActivity extends AppCompatActivity{
 
     private void initializeAgoraEngine(){
         try{
-            mRtcEngine = RtcEngine.create(getBaseContext(), getString(R.string.agora_app_id), mRtcEventHandler);
+            rtcEngine = RtcEngine.create(getBaseContext(), getString(R.string.agora_app_id), rtcEventHandler);
         }catch(Exception e){
             Log.e(LOG_TAG, Log.getStackTraceString(e));
             throw new RuntimeException("NEED TO check rtc sdk init fatal error\n" + Log.getStackTraceString(e));
@@ -164,9 +164,9 @@ public class VideochatActivity extends AppCompatActivity{
     }
 
     private void setupVideoProfile(){
-        mRtcEngine.enableVideo();
-        //mRtcEngine.setVideoProfile(Constants.VIDEO_PROFILE_360P, false); //Use this for < 2.3.0 versions
-        mRtcEngine.setVideoEncoderConfiguration(new VideoEncoderConfiguration(VideoEncoderConfiguration.VD_640x360, VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15, VideoEncoderConfiguration.STANDARD_BITRATE, VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_FIXED_PORTRAIT));
+        rtcEngine.enableVideo();
+        //rtcEngine.setVideoProfile(Constants.VIDEO_PROFILE_360P, false); //Use this for < 2.3.0 versions
+        rtcEngine.setVideoEncoderConfiguration(new VideoEncoderConfiguration(VideoEncoderConfiguration.VD_640x360, VideoEncoderConfiguration.FRAME_RATE.FRAME_RATE_FPS_15, VideoEncoderConfiguration.STANDARD_BITRATE, VideoEncoderConfiguration.ORIENTATION_MODE.ORIENTATION_MODE_FIXED_PORTRAIT));
     }
 
     private void setupLocalVideo(){
@@ -174,11 +174,11 @@ public class VideochatActivity extends AppCompatActivity{
         SurfaceView surfaceView = RtcEngine.CreateRendererView(getBaseContext());
         surfaceView.setZOrderMediaOverlay(true);
         container.addView(surfaceView);
-        mRtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT,0));
+        rtcEngine.setupLocalVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT,0));
     }
 
     private void joinChannel(){
-        mRtcEngine.joinChannel(null,"demoChannel1","Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
+        rtcEngine.joinChannel(null,"demoChannel1","Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
     }
 
     private void setupRemoteVideo(int uid){
@@ -189,14 +189,14 @@ public class VideochatActivity extends AppCompatActivity{
 
         SurfaceView surfaceView = RtcEngine.CreateRendererView(getBaseContext());
         container.addView(surfaceView);
-        mRtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, uid));
+        rtcEngine.setupRemoteVideo(new VideoCanvas(surfaceView, VideoCanvas.RENDER_MODE_FIT, uid));
         surfaceView.setTag(uid); //It is for mark purpose
         View tipMsg = findViewById(R.id.quick_tips_when_use_agora_sdk); //It is optional to improve User Interface
         tipMsg.setVisibility(View.GONE);
     }
 
     private void leaveChannel(){
-        mRtcEngine.leaveChannel();
+        rtcEngine.leaveChannel();
     }
 
     private void onRemoteUserLeft(){
