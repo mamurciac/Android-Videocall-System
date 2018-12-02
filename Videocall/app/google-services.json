@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "103118520171",
+    "firebase_url": "https://videocall-e73da.firebaseio.com",
+    "project_id": "videocall-e73da",
+    "storage_bucket": "videocall-e73da.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:103118520171:android:f1178fbed26e4681",
+        "android_client_info": {
+          "package_name": "agora.io.videocall"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "103118520171-f14lsembcvrae77u79e0ffrv80ang5oe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKdsSSvdY0FepzAxFKJLS2kkvrMTFYyTU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
