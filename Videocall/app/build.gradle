@@ -4,7 +4,8 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "agora.io.videocall"
-        minSdkVersion 14
+        //To get a successful app building before use Agora's video/audio call service, the SDK's minimum version must be at least 16
+        minSdkVersion 16
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
@@ -25,4 +26,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+
+    //This is the dependency to use Agora's video/audio call service
+    implementation 'io.agora.rtc:full-sdk:2.2.0'
 }
