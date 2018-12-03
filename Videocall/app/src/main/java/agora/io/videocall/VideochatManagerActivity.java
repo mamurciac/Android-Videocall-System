@@ -82,4 +82,9 @@ public class VideochatManagerActivity extends AppCompatActivity{
             }
         });
     }
+
+    @Override
+    public void onBackPressed(){
+
+    }
 }

@@ -12,11 +12,18 @@ import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import com.google.firebase.database.*;
+import com.instacart.library.truetime.extensionrx.TrueTimeRx;
+import java.util.*;
 import io.agora.rtc.*;
 import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration; //Use it for >= 2.3.0 versions
+import rx.Observable;
+import rx.schedulers.Schedulers;
 
 public class VideochatActivity extends AppCompatActivity{
+    private Observable<Date> dateObservable;
+    private Date startVideochatDate, endVideochatDate;
+
     private String videochatName;
     private DatabaseReference databaseReference;
     private int numberUsers;
@@ -66,6 +73,11 @@ public class VideochatActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videochat);
         informationTextView = (TextView) findViewById(R.id.quick_tips_when_use_agora_sdk);
+
+        //Peticiones a servidores NTP para obtener la hora
+        List<String> ntpHosts = Arrays.asList("co.pool.ntp.org", "time.google.com");
+        dateObservable = TrueTimeRx.build().initialize(ntpHosts).subscribeOn(Schedulers.io());
+        getTimeNow(true);
 
         if(checkSelfPermission(REQUESTED_PERMISSIONS[0], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[1], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)){
             initAgoraEngineAndJoinChannel();
@@ -147,6 +159,7 @@ public class VideochatActivity extends AppCompatActivity{
         leaveChannel();
         databaseReference = FirebaseDatabase.getInstance().getReference();
         databaseReference.child("videochats").child(videochatName).child("number_users").setValue(-1);
+        getTimeNow(false);
         RtcEngine.destroy();
         rtcEngine = null;
     }
@@ -247,5 +260,28 @@ public class VideochatActivity extends AppCompatActivity{
         if(tag != null && (Integer) tag == uid){
             surfaceView.setVisibility(muted ? View.GONE : View.VISIBLE);
         }
+    }
+
+    private void getTimeNow(boolean startedCall){
+        if(startedCall){
+            dateObservable.subscribe(date -> {
+                startVideochatDate = date;
+                Log.v(LOG_TAG, "TrueTime was initialized and we have a time: " + date);
+            }, throwable -> {
+                throwable.printStackTrace();
+            });
+        }else{
+            dateObservable.subscribe(date -> {
+                endVideochatDate = date;
+                Log.v(LOG_TAG, "TrueTime was initialized and we have a time: " + date);
+            }, throwable -> {
+                throwable.printStackTrace();
+            });
+        }
+    }
+
+    @Override
+    public void onBackPressed(){
+
     }
 }

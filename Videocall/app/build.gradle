@@ -6,7 +6,7 @@ android {
         applicationId "agora.io.videocall"
         //To get a successful app building before use Agora's video/audio call service, the SDK's minimum version must be at least 16
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -16,6 +16,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility = '1.8'
+        targetCompatibility = '1.8'
     }
 }
 
@@ -31,6 +35,8 @@ dependencies {
     implementation 'io.agora.rtc:full-sdk:2.3.1'
     //This is the dependency to use Firebase's service
     implementation 'com.google.firebase:firebase-database:16.0.1'
+    //This is the dependency to use Server TrueTime's service
+    implementation 'com.github.instacart.truetime-android:library-extension-rx:1.5'
 }
 
 apply plugin: 'com.google.gms.google-services'
