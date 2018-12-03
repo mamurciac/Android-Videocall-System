@@ -77,12 +77,14 @@ public class VideochatActivity extends AppCompatActivity{
         //Peticiones a servidores NTP para obtener la hora
         List<String> ntpHosts = Arrays.asList("co.pool.ntp.org", "time.google.com");
         dateObservable = TrueTimeRx.build().initialize(ntpHosts).subscribeOn(Schedulers.io());
-        getTimeNow(true);
 
         if(checkSelfPermission(REQUESTED_PERMISSIONS[0], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[1], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)){
             initAgoraEngineAndJoinChannel();
             Bundle bundle = getIntent().getExtras();
             videochatName = bundle.getString("videochatName");
+            long videoChatDate = bundle.getLong("startVideochatDate");
+            startVideochatDate = new Date(videoChatDate);
+
             databaseReference = FirebaseDatabase.getInstance().getReference();
             addDataBaseListener();
         }
@@ -158,8 +160,9 @@ public class VideochatActivity extends AppCompatActivity{
         super.onDestroy();
         leaveChannel();
         databaseReference = FirebaseDatabase.getInstance().getReference();
-        databaseReference.child("videochats").child(videochatName).child("number_users").setValue(-1);
-        getTimeNow(false);
+        numberUsers -= 1;
+        databaseReference.child("videochats").child(videochatName).child("number_users").setValue(numberUsers);
+        getTimeNow();
         RtcEngine.destroy();
         rtcEngine = null;
     }
@@ -225,7 +228,7 @@ public class VideochatActivity extends AppCompatActivity{
     }
 
     private void joinChannel(){
-        rtcEngine.joinChannel(null,videochatName,"Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
+        rtcEngine.joinChannel(null, "demoChannel1","Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
     }
 
     private void setupRemoteVideo(int uid){
@@ -262,22 +265,33 @@ public class VideochatActivity extends AppCompatActivity{
         }
     }
 
-    private void getTimeNow(boolean startedCall){
-        if(startedCall){
-            dateObservable.subscribe(date -> {
-                startVideochatDate = date;
-                Log.v(LOG_TAG, "TrueTime was initialized and we have a time: " + date);
-            }, throwable -> {
-                throwable.printStackTrace();
-            });
-        }else{
-            dateObservable.subscribe(date -> {
+    private void getTimeNow(){
+        dateObservable.subscribe(date -> {
+            if(numberUsers == 0){
                 endVideochatDate = date;
+                databaseReference = FirebaseDatabase.getInstance().getReference();
+                databaseReference.child("videochats").child(videochatName).child("videochat_duration").child("videochat_finish_time").setValue(endVideochatDate.toString());
+                long videochatDurationMiliseconds = endVideochatDate.getTime() - startVideochatDate.getTime();
+                long videochatDurationHours = videochatDurationMiliseconds / 3600000;
+                long videochatDurationRemainder = videochatDurationMiliseconds - videochatDurationHours * 3600000;
+                long videochatDurationMinutes = videochatDurationRemainder / 60000;
+                videochatDurationRemainder = videochatDurationRemainder - videochatDurationMinutes * 60000;
+                long videochatDurationSeconds = videochatDurationRemainder / 1000;
+                String videochatDuration = "";
+
+                if(videochatDurationHours > 0){
+                    videochatDuration = videochatDurationHours + "h " + videochatDurationMinutes + "m " + videochatDurationSeconds + "s";
+                }else if(videochatDurationMinutes > 0){
+                    videochatDuration = videochatDurationMinutes + "m " + videochatDurationSeconds + "s";
+                }else{
+                    videochatDuration = videochatDurationSeconds + "s";
+                }
+                databaseReference.child("videochats").child(videochatName).child("videochat_duration").child("videochat_time").setValue(videochatDuration);
                 Log.v(LOG_TAG, "TrueTime was initialized and we have a time: " + date);
-            }, throwable -> {
-                throwable.printStackTrace();
-            });
-        }
+            }
+        }, throwable -> {
+            throwable.printStackTrace();
+        });
     }
 
     @Override

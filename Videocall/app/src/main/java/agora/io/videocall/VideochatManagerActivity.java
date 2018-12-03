@@ -7,19 +7,31 @@ import android.util.Log;
 import android.view.View;
 import android.widget.*;
 import com.google.firebase.database.*;
+import com.instacart.library.truetime.extensionrx.TrueTimeRx;
 import java.text.*;
 import java.util.*;
+import rx.Observable;
+import rx.schedulers.Schedulers;
 
 public class VideochatManagerActivity extends AppCompatActivity{
+    private Observable<Date> dateObservable;
+    private long startVideochatTime;
+
     private Button newVideochatButton;
     private DatabaseReference databaseReference;
     private LinearLayout videochatList;
+
+    private static final String LOG_TAG = VideochatManagerActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videochat_manager);
         initializeElements();
+
+        //Peticiones a servidores NTP para obtener la hora
+        List<String> ntpHosts = Arrays.asList("co.pool.ntp.org", "time.google.com");
+        dateObservable = TrueTimeRx.build().initialize(ntpHosts).subscribeOn(Schedulers.io());
     }
 
     private void initializeElements(){
@@ -35,12 +47,11 @@ public class VideochatManagerActivity extends AppCompatActivity{
                 String gameName = "VC " + dateFormat.format(date);
                 databaseReference = FirebaseDatabase.getInstance().getReference();
                 databaseReference.child("videochats").child(gameName).child("number_users").setValue(1);
-                //databaseReference.child("videochats").child(gameName).child("videochat_duration").child("videochat_start_time").setValue(0);
-                //databaseReference.child("videochats").child(gameName).child("videochat_duration").child("videochat_finish_time").setValue(0);
-                //databaseReference.child("videochats").child(gameName).child("videochat_duration").child("videochat_duration").setValue(0);
+                startVideochatTime = getTimeNow(gameName);
 
                 Intent myIntent = new Intent(VideochatManagerActivity.this, VideochatActivity.class);
                 myIntent.putExtra("videochatName", gameName);
+                myIntent.putExtra("startVideochatDate", startVideochatTime);
                 VideochatManagerActivity.this.startActivity(myIntent);
             }
         });
@@ -56,7 +67,7 @@ public class VideochatManagerActivity extends AppCompatActivity{
                 for(DataSnapshot gameSnapshot: dataSnapshot.getChildren()){
                     int players = gameSnapshot.child("number_users").getValue(Integer.class);
                     final String gameName = gameSnapshot.getKey();
-                    if(players < 2){
+                    if(players == 1){
                         Button btn = new Button(VideochatManagerActivity.this);
                         btn.setText(gameName);
                         videochatList.addView(btn);
@@ -81,6 +92,17 @@ public class VideochatManagerActivity extends AppCompatActivity{
                 Log.w("NOTIFY", "Failed to read value.", error.toException());
             }
         });
+    }
+
+    private long getTimeNow(String videochatName){
+        dateObservable.subscribe(date -> {
+            databaseReference = FirebaseDatabase.getInstance().getReference();
+            databaseReference.child("videochats").child(videochatName).child("videochat_duration").child("videochat_start_time").setValue(date.toString());
+            Log.v(LOG_TAG, "TrueTime was initialized and we have a time: " + date);
+        }, throwable -> {
+            throwable.printStackTrace();
+        });
+        return dateObservable.toBlocking().first().getTime();
     }
 
     @Override
