@@ -61,8 +61,6 @@ public class VideochatManagerActivity extends AppCompatActivity{
                         btn.setText(gameName);
                         videochatList.addView(btn);
 
-                        System.out.println("Game Name " + gameName);
-
                         btn.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {

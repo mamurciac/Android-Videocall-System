@@ -17,14 +17,13 @@ import io.agora.rtc.video.VideoCanvas;
 import io.agora.rtc.video.VideoEncoderConfiguration; //Use it for >= 2.3.0 versions
 
 public class VideochatActivity extends AppCompatActivity{
-    private String gameName;
-    private DatabaseReference mDatabase;
+    private String videochatName;
+    private DatabaseReference databaseReference;
     private int numberUsers;
 
     private static final String LOG_TAG = VideochatActivity.class.getSimpleName();
     private static final int PERMISSION_REQ_ID = 22;
-
-    private TextView mTextView;
+    private TextView informationTextView;
 
     //The WRITE_EXTERNAL_STORAGE permission isn't mandatory for Agora RTC SDK, just incase if you wanna save logs to external sdcard
     private static final String[] REQUESTED_PERMISSIONS = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -66,37 +65,36 @@ public class VideochatActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_videochat);
-        mTextView = (TextView) findViewById(R.id.quick_tips_when_use_agora_sdk);
+        informationTextView = (TextView) findViewById(R.id.quick_tips_when_use_agora_sdk);
 
         if(checkSelfPermission(REQUESTED_PERMISSIONS[0], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[1], PERMISSION_REQ_ID) && checkSelfPermission(REQUESTED_PERMISSIONS[2], PERMISSION_REQ_ID)){
             initAgoraEngineAndJoinChannel();
-            Bundle b = getIntent().getExtras();
-            gameName = b.getString("videochatName");
-            mDatabase = FirebaseDatabase.getInstance().getReference();
+            Bundle bundle = getIntent().getExtras();
+            videochatName = bundle.getString("videochatName");
+            databaseReference = FirebaseDatabase.getInstance().getReference();
             addDataBaseListener();
         }
     }
 
     private void addDataBaseListener(){
-        DatabaseReference referenceNumberUsers = mDatabase.child("videochats").child(gameName).child("number_users");
-
+        DatabaseReference referenceNumberUsers = databaseReference.child("videochats").child(videochatName).child("number_users");
         referenceNumberUsers.addValueEventListener(new ValueEventListener(){
             @Override
             public void onDataChange(DataSnapshot dataSnapshot){
                 numberUsers = dataSnapshot.getValue(Integer.class);
-                checkWinner();
+                checkNumberUsers();
             }
             @Override
             public void onCancelled(DatabaseError error){
-                Log.w("NOTIFI", "Failed to read value.", error.toException());
+                Log.w("NOTIFY","Failed to read value.", error.toException());
             }
         });
     }
 
-    void checkWinner(){
-        mDatabase = FirebaseDatabase.getInstance().getReference();
+    void checkNumberUsers(){
+        databaseReference = FirebaseDatabase.getInstance().getReference();
         if(numberUsers == 1){
-            mTextView.setText("Esperando a otro Jugador");
+            informationTextView.setText("Esperando al paciente o doctor");
         }
     }
 
@@ -147,8 +145,8 @@ public class VideochatActivity extends AppCompatActivity{
     protected void onDestroy(){
         super.onDestroy();
         leaveChannel();
-        mDatabase = FirebaseDatabase.getInstance().getReference();
-        mDatabase.child("videochats").child(gameName).child("number_users").setValue(999);
+        databaseReference = FirebaseDatabase.getInstance().getReference();
+        databaseReference.child("videochats").child(videochatName).child("number_users").setValue(-1);
         RtcEngine.destroy();
         rtcEngine = null;
     }
@@ -214,7 +212,7 @@ public class VideochatActivity extends AppCompatActivity{
     }
 
     private void joinChannel(){
-        rtcEngine.joinChannel(null,"demoChannel1","Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
+        rtcEngine.joinChannel(null,videochatName,"Extra Optional Data",0); //If you don't specify the uid, Agora will generate the uid for you
     }
 
     private void setupRemoteVideo(int uid){
