@@ -1,9 +1,13 @@
 package agora.io.videocall;
 
+import android.app.ActionBar;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
+import android.util.*;
 import android.view.View;
 import android.widget.*;
 import com.google.firebase.database.*;
@@ -44,13 +48,13 @@ public class VideochatManagerActivity extends AppCompatActivity{
             public void onClick(View view){
                 Date date = new Date();
                 DateFormat dateFormat = new SimpleDateFormat("dd_MM_yy_hh_mm_ss");
-                String gameName = "VC " + dateFormat.format(date);
+                String videochatName = "VC " + dateFormat.format(date);
                 databaseReference = FirebaseDatabase.getInstance().getReference();
-                databaseReference.child("videochats").child(gameName).child("number_users").setValue(1);
-                startVideochatTime = getTimeNow(gameName);
+                databaseReference.child("videochats").child(videochatName).child("number_users").setValue(1);
+                startVideochatTime = getTimeNow(videochatName);
 
                 Intent myIntent = new Intent(VideochatManagerActivity.this, VideochatActivity.class);
-                myIntent.putExtra("videochatName", gameName);
+                myIntent.putExtra("videochatName", videochatName);
                 myIntent.putExtra("startVideochatDate", startVideochatTime);
                 VideochatManagerActivity.this.startActivity(myIntent);
             }
@@ -59,31 +63,43 @@ public class VideochatManagerActivity extends AppCompatActivity{
     }
 
     private void showGameList(){
-        DatabaseReference games = databaseReference.child("videochats");
-        games.addValueEventListener(new ValueEventListener(){
+        DatabaseReference videochats = databaseReference.child("videochats");
+        videochats.addValueEventListener(new ValueEventListener(){
             @Override
             public void onDataChange(DataSnapshot dataSnapshot){
                 videochatList.removeAllViews();
                 for(DataSnapshot gameSnapshot: dataSnapshot.getChildren()){
-                    int players = gameSnapshot.child("number_users").getValue(Integer.class);
-                    final String gameName = gameSnapshot.getKey();
-                    if(players == 1){
-                        Button btn = new Button(VideochatManagerActivity.this);
-                        btn.setText(gameName);
-                        videochatList.addView(btn);
+                    int numberUsers = gameSnapshot.child("number_users").getValue(Integer.class);
+                    final String videochatName = gameSnapshot.getKey();
+                    if(numberUsers == 1){
+                        Resources resources = getResources();
+                        float leftMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,13, resources.getDisplayMetrics());
+                        float topMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,13, resources.getDisplayMetrics());
+                        float rightMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,13, resources.getDisplayMetrics());
+                        float bottomMargin = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,13, resources.getDisplayMetrics());
 
-                        btn.setOnClickListener(new View.OnClickListener() {
+                        Button videochatButton = new Button(VideochatManagerActivity.this);
+                        Drawable drawableResourceId = getResources().getDrawable(R.drawable.blue_button);
+                        videochatButton.setBackground(drawableResourceId);
+                        videochatButton.setTextColor(Color.WHITE);
+                        LinearLayout.LayoutParams buttonLayout = new LinearLayout.LayoutParams(ActionBar.LayoutParams.FILL_PARENT, ActionBar.LayoutParams.MATCH_PARENT);
+                        buttonLayout.setMargins(Math.round(leftMargin), Math.round(topMargin), Math.round(rightMargin), Math.round(bottomMargin));
+                        videochatButton.setLayoutParams(buttonLayout);
+                        videochatButton.setText(videochatName);
+                        videochatList.addView(videochatButton);
+
+                        videochatButton.setOnClickListener(new View.OnClickListener(){
                             @Override
-                            public void onClick(View view) {
+                            public void onClick(View view){
                                 databaseReference = FirebaseDatabase.getInstance().getReference();
-                                databaseReference.child("videochats").child(gameName).child("number_users").setValue(2);
+                                databaseReference.child("videochats").child(videochatName).child("number_users").setValue(2);
                                 Intent myIntent = new Intent(VideochatManagerActivity.this, VideochatActivity.class);
-                                myIntent.putExtra("videochatName", gameName);
+                                myIntent.putExtra("videochatName", videochatName);
                                 VideochatManagerActivity.this.startActivity(myIntent);
                             }
                         });
                     }
-                    Log.d("asdfg", gameName);
+                    Log.d("asdfg", videochatName);
                 }
             }
 
